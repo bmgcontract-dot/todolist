@@ -12,7 +12,14 @@
             theme: {
                 extend: {
                     colors: {
-                        pastel: { light: '#f0fdf4', DEFAULT: '#4ade80', dark: '#16a34a', text: '#14532d' }
+                        pastel: { 
+                            light: '#e8f5e9',   // เขียวพาสเทลอ่อน (พื้นหลังกรอบ)
+                            DEFAULT: '#a5d6a7', // เขียวพาสเทลกลาง (เส้นขอบ)
+                            dark: '#81c784',    // เขียวพาสเทลเข้ม
+                            btn: '#66bb6a',     // สีเขียวพาสเทลสำหรับปุ่ม
+                            nav: '#43a047',     // สีเขียวสำหรับแถบเมนูและหัวข้อ
+                            text: '#1b5e20'     // สีเขียวเข้มสุดสำหรับตัวอักษร
+                        }
                     }
                 }
             }
@@ -30,7 +37,7 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap');
-        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Prompt', sans-serif; background-color: #f2fcf5; }
         .view-section { display: none; }
         .view-section.active { display: block; }
         
@@ -51,7 +58,7 @@
 <body class="text-gray-800">
 
     <!-- Navbar -->
-    <nav class="bg-pastel-dark text-white p-4 shadow-md sticky top-0 z-50 no-print">
+    <nav class="bg-pastel-nav text-white p-4 shadow-md sticky top-0 z-50 no-print">
         <div class="container mx-auto max-w-md flex justify-between items-center">
             <div class="text-xl font-bold flex items-center gap-2">
                 <i class="fa-solid fa-leaf"></i> My Guest
@@ -76,40 +83,42 @@
         <!-- VIEW 1: ฟอร์มบันทึกผู้มาติดต่อ (สำหรับ รปภ.) -->
         <!-- ========================================== -->
         <section id="view-form" class="view-section active">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h2 class="text-xl font-bold text-pastel-dark mb-4 border-b pb-2">ลงทะเบียนผู้มาติดต่อ</h2>
+            <div class="bg-white rounded-2xl shadow-sm border border-pastel-DEFAULT p-6">
+                <h2 class="text-xl font-bold text-pastel-nav mb-4 border-b pb-2">ลงทะเบียนผู้มาติดต่อ</h2>
                 
                 <form id="visitorForm" onsubmit="handleFormSubmit(event)">
-                    <!-- วันที่/เวลา -->
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
-                            <input type="text" id="inpDate" class="w-full bg-gray-100 border-none rounded-lg p-2 text-sm" readonly>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">เวลา</label>
-                            <input type="text" id="inpTime" class="w-full bg-gray-100 border-none rounded-lg p-2 text-sm" readonly>
+                    <!-- วันที่/เวลา (แสดงผลขนาดใหญ่ ไม่ให้แก้ไข) -->
+                    <div class="bg-pastel-light border border-pastel-DEFAULT rounded-2xl p-4 mb-6 shadow-inner text-center">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-pastel-text mb-1">วันที่ (Date)</label>
+                                <input type="text" id="inpDate" class="w-full bg-transparent border-none text-center text-2xl font-bold text-pastel-nav p-0 focus:ring-0 cursor-default pointer-events-none" readonly tabindex="-1">
+                            </div>
+                            <div class="border-l-2 border-pastel-DEFAULT">
+                                <label class="block text-sm font-semibold text-pastel-text mb-1">เวลา (Time)</label>
+                                <input type="text" id="inpTime" class="w-full bg-transparent border-none text-center text-2xl font-bold text-pastel-nav p-0 focus:ring-0 cursor-default pointer-events-none" readonly tabindex="-1">
+                            </div>
                         </div>
                     </div>
 
                     <!-- สถานที่ติดต่อ -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">สถานที่ติดต่อ</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <label class="border rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:bg-pastel-light bg-pastel-light border-pastel-dark">
-                                <input type="radio" name="contactType" value="room" class="accent-pastel-dark" checked onchange="toggleRoomInput()">
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="border-2 rounded-xl p-3 flex justify-center items-center cursor-pointer transition-all duration-200 bg-pastel-light border-pastel-dark text-pastel-nav font-bold shadow-sm">
+                                <input type="radio" name="contactType" value="room" class="hidden" checked onchange="toggleRoomInput()">
                                 <span class="text-sm">บ้าน/ห้องชุด</span>
                             </label>
-                            <label class="border rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:bg-pastel-light">
-                                <input type="radio" name="contactType" value="office" class="accent-pastel-dark" onchange="toggleRoomInput()">
+                            <label class="border-2 rounded-xl p-3 flex justify-center items-center cursor-pointer transition-all duration-200 bg-white border-gray-200 text-gray-600 font-medium hover:bg-gray-50">
+                                <input type="radio" name="contactType" value="office" class="hidden" onchange="toggleRoomInput()">
                                 <span class="text-sm">นิติบุคคล</span>
                             </label>
-                            <label class="border rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:bg-pastel-light">
-                                <input type="radio" name="contactType" value="visit" class="accent-pastel-dark" onchange="toggleRoomInput()">
+                            <label class="border-2 rounded-xl p-3 flex justify-center items-center cursor-pointer transition-all duration-200 bg-white border-gray-200 text-gray-600 font-medium hover:bg-gray-50">
+                                <input type="radio" name="contactType" value="visit" class="hidden" onchange="toggleRoomInput()">
                                 <span class="text-sm">เยี่ยมชมโครงการ</span>
                             </label>
-                            <label class="border rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:bg-pastel-light">
-                                <input type="radio" name="contactType" value="other" class="accent-pastel-dark" onchange="toggleRoomInput()">
+                            <label class="border-2 rounded-xl p-3 flex justify-center items-center cursor-pointer transition-all duration-200 bg-white border-gray-200 text-gray-600 font-medium hover:bg-gray-50">
+                                <input type="radio" name="contactType" value="other" class="hidden" onchange="toggleRoomInput()">
                                 <span class="text-sm">อื่นๆ</span>
                             </label>
                         </div>
@@ -150,7 +159,7 @@
                     </div>
 
                     <!-- ปุ่ม Submit -->
-                    <button type="submit" class="w-full bg-pastel-dark hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg transition flex justify-center items-center gap-2">
+                    <button type="submit" class="w-full bg-pastel-btn hover:bg-pastel-nav text-white font-bold py-4 text-lg rounded-xl shadow-lg transition flex justify-center items-center gap-2">
                         <i class="fa-solid fa-save"></i> บันทึกข้อมูล
                     </button>
                 </form>
@@ -161,11 +170,11 @@
         <!-- VIEW 2: หน้าสลิป และ QR Code -->
         <!-- ========================================== -->
         <section id="view-slip" class="view-section">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 print-area relative">
+            <div class="bg-white rounded-2xl shadow-sm border border-pastel-DEFAULT p-6 print-area relative">
                 
                 <div class="text-center mb-4">
-                    <i class="fa-solid fa-leaf text-3xl text-pastel-dark mb-2"></i>
-                    <h2 class="text-xl font-bold">My Guest</h2>
+                    <i class="fa-solid fa-leaf text-3xl text-pastel-nav mb-2"></i>
+                    <h2 class="text-xl font-bold text-pastel-text">My Guest</h2>
                     <p class="text-sm text-gray-500">บัตรผู้มาติดต่อ / Visitor Pass</p>
                 </div>
 
@@ -189,7 +198,7 @@
                 <button onclick="window.print()" class="no-print w-full bg-gray-800 hover:bg-black text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2 mb-3">
                     <i class="fa-solid fa-print"></i> พิมพ์บัตร (Print)
                 </button>
-                <button onclick="resetForm()" class="no-print w-full bg-pastel-light text-pastel-text font-bold py-3 rounded-xl transition flex justify-center items-center gap-2">
+                <button onclick="resetForm()" class="no-print w-full bg-pastel-light hover:bg-pastel-DEFAULT text-pastel-text font-bold py-3 rounded-xl transition flex justify-center items-center gap-2">
                     <i class="fa-solid fa-arrow-left"></i> กลับหน้าแรก
                 </button>
             </div>
@@ -199,8 +208,8 @@
         <!-- VIEW 3: หน้า Scan Check-out (สำหรับ รปภ.) -->
         <!-- ========================================== -->
         <section id="view-scan" class="view-section">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
-                <h2 class="text-xl font-bold text-pastel-dark mb-4">สแกนบัตรขาออก</h2>
+            <div class="bg-white rounded-2xl shadow-sm border border-pastel-DEFAULT p-6 text-center">
+                <h2 class="text-xl font-bold text-pastel-nav mb-4">สแกนบัตรขาออก</h2>
                 <div id="qr-reader" class="w-full bg-gray-100 rounded-xl overflow-hidden mb-4 border border-gray-300"></div>
                 
                 <div class="relative my-4">
@@ -210,7 +219,7 @@
 
                 <form onsubmit="manualSearch(event)" class="flex gap-2">
                     <input type="text" id="inpSearch" placeholder="กรอกรหัส (เช่น V230...)" class="flex-1 border rounded-lg p-2 outline-none focus:border-pastel-dark">
-                    <button type="submit" class="bg-pastel-dark text-white px-4 rounded-lg"><i class="fa-solid fa-search"></i></button>
+                    <button type="submit" class="bg-pastel-btn hover:bg-pastel-nav text-white px-4 rounded-lg transition"><i class="fa-solid fa-search"></i></button>
                 </form>
             </div>
         </section>
@@ -219,8 +228,8 @@
         <!-- VIEW 4: หน้าสรุปผลขาออก (Check-out Detail) -->
         <!-- ========================================== -->
         <section id="view-checkout" class="view-section">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h2 class="text-xl font-bold text-pastel-dark mb-4 border-b pb-2">รายละเอียดขาออก</h2>
+            <div class="bg-white rounded-2xl shadow-sm border border-pastel-DEFAULT p-6">
+                <h2 class="text-xl font-bold text-pastel-nav mb-4 border-b pb-2">รายละเอียดขาออก</h2>
                 
                 <div id="checkoutStatusBox" class="p-4 rounded-xl text-center mb-4 font-bold text-lg">
                     <!-- Status here -->
@@ -236,7 +245,7 @@
                     </div>
                 </div>
 
-                <button id="btnConfirmCheckout" onclick="processCheckout()" class="w-full bg-pastel-dark hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg transition flex justify-center items-center gap-2 mb-3">
+                <button id="btnConfirmCheckout" onclick="processCheckout()" class="w-full bg-pastel-btn hover:bg-pastel-nav text-white font-bold py-3 rounded-xl shadow-lg transition flex justify-center items-center gap-2 mb-3">
                     <i class="fa-solid fa-sign-out-alt"></i> บันทึกรถออก (Check-Out)
                 </button>
                 <button onclick="switchView('view-scan')" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2">
@@ -249,12 +258,12 @@
         <!-- VIEW 5: หน้าประทับตรา (สำหรับลูกบ้านสแกน QR) -->
         <!-- ========================================== -->
         <section id="view-resident-stamp" class="view-section">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
-                <div class="w-16 h-16 bg-pastel-light text-pastel-dark rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            <div class="bg-white rounded-2xl shadow-sm border border-pastel-DEFAULT p-6 text-center">
+                <div class="w-16 h-16 bg-pastel-light text-pastel-nav rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                     <i class="fa-solid fa-home"></i>
                 </div>
                 <h2 class="text-xl font-bold text-gray-800 mb-2">ยืนยันผู้มาติดต่อ</h2>
-                <p class="text-sm text-gray-500 mb-6">ห้อง: <span id="rsRoom" class="font-bold text-pastel-dark"></span></p>
+                <p class="text-sm text-gray-500 mb-6">ห้อง: <span id="rsRoom" class="font-bold text-pastel-nav"></span></p>
 
                 <div class="bg-gray-50 rounded-xl p-4 text-left text-sm space-y-2 mb-6 border">
                     <div class="flex justify-between"><span class="text-gray-500">เวลาเข้า:</span> <span id="rsTimeIn"></span></div>
@@ -262,7 +271,7 @@
                 </div>
 
                 <div id="rsActionButtons">
-                    <button onclick="residentStampAction('stamp')" class="w-full bg-pastel-dark hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg transition flex justify-center items-center gap-2 mb-3">
+                    <button onclick="residentStampAction('stamp')" class="w-full bg-pastel-btn hover:bg-pastel-nav text-white font-bold py-3 rounded-xl shadow-lg transition flex justify-center items-center gap-2 mb-3">
                         <i class="fa-solid fa-check-circle"></i> ประทับตราอนุมัติ
                     </button>
                     <button onclick="residentStampAction('reject')" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2">
@@ -288,8 +297,8 @@
             updateDateTime();
             setInterval(updateDateTime, 60000); // อัปเดตเวลาทุก 1 นาที
             
-            // จำลองการโหลดข้อมูลห้องพัก (ในการใช้จริงจะเรียก google.script.run)
-            mockLoadResidents();
+            // ดึงข้อมูลห้องพักจาก Google Sheets จริง
+            loadResidents();
 
             // เช็ค URL Params ว่าเป็นการสแกน QR ของลูกบ้านหรือไม่
             checkUrlParams();
@@ -324,12 +333,15 @@
             const roomInput = document.getElementById('inpRoom');
             const labels = document.querySelectorAll('input[name="contactType"]');
             
-            // ปรับสีปุ่ม Radio
+            // ปรับสีปุ่มแบบไม่แสดงจุด (Pill Buttons)
             labels.forEach(radio => {
+                const parent = radio.parentElement;
                 if(radio.checked) {
-                    radio.parentElement.classList.add('bg-pastel-light', 'border-pastel-dark');
+                    parent.classList.remove('bg-white', 'border-gray-200', 'text-gray-600', 'font-medium', 'hover:bg-gray-50');
+                    parent.classList.add('bg-pastel-light', 'border-pastel-dark', 'text-pastel-nav', 'font-bold', 'shadow-sm');
                 } else {
-                    radio.parentElement.classList.remove('bg-pastel-light', 'border-pastel-dark');
+                    parent.classList.remove('bg-pastel-light', 'border-pastel-dark', 'text-pastel-nav', 'font-bold', 'shadow-sm');
+                    parent.classList.add('bg-white', 'border-gray-200', 'text-gray-600', 'font-medium', 'hover:bg-gray-50');
                 }
             });
 
@@ -359,16 +371,24 @@
             }
         }
 
-        // โหลดข้อมูลห้องพักจำลอง (GAS Simulation)
-        function mockLoadResidents() {
-            // โค้ดจริง: google.script.run.withSuccessHandler(populateDatalist).getResidentsList();
-            const mockData = ["A101", "A102", "B201", "B202", "99/1", "99/2"];
-            populateDatalist(mockData);
+        // โหลดข้อมูลห้องพักจาก GAS
+        function loadResidents() {
+            if (typeof google !== 'undefined') {
+                google.script.run
+                    .withSuccessHandler(populateDatalist)
+                    .withFailureHandler(function(error) {
+                        console.error('Error loading residents:', error);
+                    })
+                    .getResidentsList();
+            } else {
+                populateDatalist(["A101", "A102", "B201", "B202"]); // Mock สำรอง
+            }
         }
 
         function populateDatalist(dataArray) {
             const datalist = document.getElementById('roomList');
             datalist.innerHTML = '';
+            if(!dataArray || dataArray.length === 0) return;
             dataArray.forEach(room => {
                 let option = document.createElement('option');
                 option.value = room;
@@ -400,22 +420,42 @@
 
             showLoading(true);
 
-            // โค้ดจริง: google.script.run.withSuccessHandler(showSlip).saveVisitor(formData);
-            
-            // Mock System
-            setTimeout(() => {
-                showLoading(false);
-                const mockResult = {
-                    success: true,
-                    id: "V" + new Date().getTime().toString().slice(-6),
-                    date: document.getElementById('inpDate').value,
-                    timeIn: document.getElementById('inpTime').value,
-                    photoUrl: currentBase64Image,
-                    target: targetRoom,
-                    purpose: purpose
-                };
-                showSlip(mockResult);
-            }, 1500);
+            // ส่งข้อมูลไปบันทึกที่ Google Sheets (Backend Code.gs) จริงๆ
+            if (typeof google !== 'undefined') {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        showLoading(false);
+                        // ถ้าบันทึกสำเร็จ (ไม่มี Error จากฝั่ง Code.gs)
+                        if(result && result.success) {
+                            result.target = targetRoom;
+                            result.purpose = purpose;
+                            showSlip(result);
+                        } else {
+                            // กรณีบันทึกไม่สำเร็จ เช่น สิทธิ์เข้าถึงไม่ผ่าน
+                            Swal.fire('ข้อผิดพลาดจากเซิร์ฟเวอร์', result.error || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        showLoading(false);
+                        Swal.fire('เชื่อมต่อล้มเหลว', 'Error: ' + error.message, 'error');
+                    })
+                    .saveVisitor(formData);
+            } else {
+                // Mock System (กรณีรันทดสอบแบบออฟไลน์)
+                setTimeout(() => {
+                    showLoading(false);
+                    const mockResult = {
+                        success: true,
+                        id: "V" + new Date().getTime().toString().slice(-6),
+                        date: document.getElementById('inpDate').value,
+                        timeIn: document.getElementById('inpTime').value,
+                        photoUrl: currentBase64Image,
+                        target: targetRoom,
+                        purpose: purpose
+                    };
+                    showSlip(mockResult);
+                }, 1500);
+            }
         }
 
         // แสดงหน้า Slip และสร้าง QR Code
@@ -432,7 +472,8 @@
             document.getElementById('slipPurpose').innerText = data.purpose;
 
             // สร้าง QR Code (URL ชี้กลับมาที่ Web App)
-            const webAppUrl = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // เปลี่ยนเป็น URL ของคุณ
+            // *** สำคัญ: ต้องใส่ URL จริงที่ได้จากการ Deploy ในบรรทัดข้างล่างนี้ ***
+            const webAppUrl = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // <-- แก้เป็น URL จริงของคุณ
             const qrUrl = `${webAppUrl}?action=stamp&id=${data.id}`;
             
             document.getElementById('qrcode').innerHTML = '';
@@ -498,19 +539,31 @@
 
         function fetchVisitorForCheckout(id) {
             showLoading(true);
-            // โค้ดจริง: google.script.run.withSuccessHandler(showCheckoutDetail).getVisitorData(id);
             
-            // Mock
-            setTimeout(() => {
-                showLoading(false);
-                // จำลองว่าเจอบ้างไม่เจอบ้าง
-                const mockData = {
-                    id: id, TargetRoom: 'A101', TimeIn: '08:30', 
-                    LicensePlatePhoto_URL: 'https://via.placeholder.com/300x200?text=Car', 
-                    Status: Math.random() > 0.5 ? 'Stamped' : 'Pending'
-                };
-                showCheckoutDetail(mockData);
-            }, 1000);
+            // ดึงข้อมูลขาหลังจาก Google Sheets จริง
+            if (typeof google !== 'undefined') {
+                google.script.run
+                    .withSuccessHandler(function(data) {
+                        showLoading(false);
+                        showCheckoutDetail(data);
+                    })
+                    .withFailureHandler(function(error) {
+                        showLoading(false);
+                        Swal.fire('เชื่อมต่อล้มเหลว', 'Error: ' + error.message, 'error');
+                    })
+                    .getVisitorData(id);
+            } else {
+                // Mock
+                setTimeout(() => {
+                    showLoading(false);
+                    const mockData = {
+                        id: id, TargetRoom: 'A101', TimeIn: '08:30', 
+                        LicensePlatePhoto_URL: 'https://via.placeholder.com/300x200?text=Car', 
+                        Status: Math.random() > 0.5 ? 'Stamped' : 'Pending'
+                    };
+                    showCheckoutDetail(mockData);
+                }, 1000);
+            }
         }
 
         function showCheckoutDetail(data) {
@@ -565,14 +618,32 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     showLoading(true);
-                    // โค้ดจริง: google.script.run.withSuccessHandler((res)=>{...}).updateVisitorStatus(activeVisitorId, 'checkout');
                     
-                    // Mock
-                    setTimeout(() => {
-                        showLoading(false);
-                        Swal.fire('สำเร็จ', 'บันทึกรถออกเรียบร้อย', 'success');
-                        switchView('view-scan');
-                    }, 1000);
+                    // อัปเดตข้อมูลรถออกไปที่ Google Sheets จริง
+                    if (typeof google !== 'undefined') {
+                        google.script.run
+                            .withSuccessHandler(function(res) {
+                                showLoading(false);
+                                if(res && res.success) {
+                                    Swal.fire('สำเร็จ', 'บันทึกรถออกเรียบร้อย', 'success');
+                                    switchView('view-scan');
+                                } else {
+                                    Swal.fire('ข้อผิดพลาด', res.error || 'เกิดข้อผิดพลาดในการบันทึก', 'error');
+                                }
+                            })
+                            .withFailureHandler(function(error) {
+                                showLoading(false);
+                                Swal.fire('เชื่อมต่อล้มเหลว', 'Error: ' + error.message, 'error');
+                            })
+                            .updateVisitorStatus(activeVisitorId, 'checkout');
+                    } else {
+                        // Mock
+                        setTimeout(() => {
+                            showLoading(false);
+                            Swal.fire('สำเร็จ', 'บันทึกรถออกเรียบร้อย', 'success');
+                            switchView('view-scan');
+                        }, 1000);
+                    }
                 }
             });
         }
@@ -602,20 +673,44 @@
 
         function residentStampAction(actionType) {
             showLoading(true);
-            // โค้ดจริง: google.script.run.withSuccessHandler(onResidentStamped).updateVisitorStatus(activeVisitorId, actionType);
             
-            // Mock
-            setTimeout(() => {
-                showLoading(false);
-                document.getElementById('rsActionButtons').style.display = 'none';
-                const msgBox = document.getElementById('rsSuccessMsg');
-                msgBox.style.display = 'block';
-                if(actionType === 'reject') {
-                    msgBox.classList.replace('bg-green-50', 'bg-red-50');
-                    msgBox.classList.replace('text-green-600', 'text-red-600');
-                    msgBox.innerText = 'บันทึก "ปฏิเสธ" เรียบร้อยแล้ว';
-                }
-            }, 1000);
+            // ส่งข้อมูลประทับตราไปที่ Google Sheets จริง
+            if (typeof google !== 'undefined') {
+                google.script.run
+                    .withSuccessHandler(function(res) {
+                        showLoading(false);
+                        if(res && res.success) {
+                            document.getElementById('rsActionButtons').style.display = 'none';
+                            const msgBox = document.getElementById('rsSuccessMsg');
+                            msgBox.style.display = 'block';
+                            if(actionType === 'reject') {
+                                msgBox.classList.replace('bg-green-50', 'bg-red-50');
+                                msgBox.classList.replace('text-green-600', 'text-red-600');
+                                msgBox.innerText = 'บันทึก "ปฏิเสธ" เรียบร้อยแล้ว';
+                            }
+                        } else {
+                            Swal.fire('ข้อผิดพลาด', res.error || 'บันทึกไม่สำเร็จ', 'error');
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        showLoading(false);
+                        Swal.fire('เชื่อมต่อล้มเหลว', 'Error: ' + error.message, 'error');
+                    })
+                    .updateVisitorStatus(activeVisitorId, actionType);
+            } else {
+                // Mock
+                setTimeout(() => {
+                    showLoading(false);
+                    document.getElementById('rsActionButtons').style.display = 'none';
+                    const msgBox = document.getElementById('rsSuccessMsg');
+                    msgBox.style.display = 'block';
+                    if(actionType === 'reject') {
+                        msgBox.classList.replace('bg-green-50', 'bg-red-50');
+                        msgBox.classList.replace('text-green-600', 'text-red-600');
+                        msgBox.innerText = 'บันทึก "ปฏิเสธ" เรียบร้อยแล้ว';
+                    }
+                }, 1000);
+            }
         }
 
         function showLoading(show) {

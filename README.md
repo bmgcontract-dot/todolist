@@ -149,7 +149,7 @@
                 <!-- Dynamic Fields based on Contact Type -->
                 <div id="roomInputContainer" class="mb-5 hidden">
                     <label class="block text-sm font-bold text-gray-700 mb-1">ระบุเลขห้อง / บ้านเลขที่ <span class="text-red-500">*</span></label>
-                    <input type="text" id="targetRoom" list="roomList" placeholder="เช่น 123/45" class="w-full border-gray-200 rounded-xl p-3 border focus:outline-none" autocomplete="off">
+                    <input type="text" id="targetRoom" list="roomList" placeholder="กำลังโหลดข้อมูล..." class="w-full border-gray-200 rounded-xl p-3 border focus:outline-none" autocomplete="off">
                     <datalist id="roomList">
                         <!-- ตัวเลือกห้องจะถูกดึงมาใส่ตรงนี้โดย JavaScript -->
                     </datalist>
@@ -729,13 +729,36 @@
                     initLIFFForRegistration(regRoom);
                 }
 
+                // สั่งดึงข้อมูลรายชื่อห้องมาใส่ Autocomplete ตอนเปิดเว็บ
+                const roomInput = getEl('targetRoom');
+                if(roomInput) roomInput.placeholder = "กำลังโหลดข้อมูลห้อง...";
+
                 if (typeof google !== 'undefined' && google.script && google.script.run) {
                     google.script.run
-                        .withSuccessHandler(populateRoomList)
-                        .withFailureHandler(err => console.warn('ไม่สามารถโหลดรายชื่อห้องได้', err))
+                        .withSuccessHandler((rooms) => {
+                            populateRoomList(rooms);
+                            if(roomInput) roomInput.placeholder = "เช่น 123/45 (พิมพ์เพื่อค้นหา)";
+                        })
+                        .withFailureHandler(err => {
+                            console.error('ไม่สามารถโหลดรายชื่อห้องได้', err);
+                            if(roomInput) roomInput.placeholder = "โหลดข้อมูลล้มเหลว";
+                            
+                            // แสดง Error ให้เห็นชัดเจนว่าพังที่ Backend
+                            Swal.fire({
+                                title: 'เชื่อมต่อฐานข้อมูลล้มเหลว',
+                                text: 'ไม่สามารถดึงรายชื่อห้องได้ กรุณาตรวจสอบการตั้งค่า Sheet ID หรือการ Deploy (ต้อง Deploy เป็นเวอร์ชันใหม่เสมอ) | Error Detail: ' + (err.message || 'Unknown Error'),
+                                icon: 'error',
+                                toast: true,
+                                position: 'top',
+                                showConfirmButton: false,
+                                timer: 6000
+                            });
+                        })
                         .getRoomList();
                 } else {
+                    // โหมดจำลองข้อมูล (รันบนบราวเซอร์ทั่วไป)
                     populateRoomList(["101", "102", "123/45"]);
+                    if(roomInput) roomInput.placeholder = "เช่น 123/45 (โหมดจำลอง)";
                 }
             } catch (err) {
                 console.error("Window Load Error:", err);

@@ -1,679 +1,859 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MY Guest</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Kanit', sans-serif; background-color: #f0fdf4; }
-    .pastel-green { background-color: #dcfce7; }
-    .btn-green { background-color: #10b981; color: white; transition: all 0.3s; }
-    .btn-green:hover { background-color: #059669; transform: translateY(-2px); }
-    .card { background: white; border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    @media print {
-      body * { visibility: hidden; }
-      #slip-print, #slip-print * { visibility: visible; }
-      #slip-print { position: absolute; left: 0; top: 0; width: 80mm; padding: 10px; border: none; }
-      .no-print { display: none !important; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MY GUEST - Visitor System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- LINE LIFF (เพิ่มใหม่) -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        // ป้องกัน Error กรณีที่ Tailwind โหลดไม่ขึ้น
+        try {
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            pastel: {
+                                light: '#e0f2fe',
+                                green: '#d1fae5', // เขียวพาสเทลอ่อนสุด
+                                primary: '#34d399', // เขียวหลัก
+                                dark: '#059669' // เขียวเข้ม
+                            }
+                        }
+                    }
+                }
+            };
+        } catch(e) { console.warn("Tailwind config error"); }
+    </script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0fdf4; }
+        
+        /* Fallback CSS: สำคัญมาก ป้องกันกรณีโหลด Tailwind ไม่ขึ้น แท็บเมนูจะได้ยังทำงานได้ */
+        .hidden { display: none !important; }
+        
+        /* สไตล์สำหรับซ่อน/แสดงเนื้อหาตอน Print สลิปความร้อน */
+        @media print {
+            body * { visibility: hidden; }
+            #print-slip-area, #print-slip-area * { visibility: visible; }
+            #print-slip-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-width: 80mm; /* ขนาดกระดาษสลิปความร้อน */
+                margin: 0 auto;
+                padding: 10px;
+                color: black !important;
+            }
+            .no-print { display: none !important; }
+        }
+        
+        /* เพิ่มมิติให้กับ Input */
+        input[type="text"], select {
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.03);
+            transition: all 0.2s;
+        }
+        input[type="text"]:focus, select:focus {
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.3);
+            outline: none;
+        }
+    </style>
 </head>
-<body class="p-2 md:p-8">
+<body class="text-gray-800 pb-20">
 
-  <div id="app" class="max-w-md mx-auto">
-    <!-- Header -->
-    <div class="text-center mb-6 no-print">
-      <h1 class="text-3xl font-bold text-emerald-700">MY Guest</h1>
-      <p class="text-emerald-500 text-sm">ระบบจัดการผู้มาติดต่ออัจฉริยะ</p>
-    </div>
+    <!-- Navbar -->
+    <nav class="bg-pastel-primary shadow-lg rounded-b-2xl mb-6">
+        <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center text-white">
+            <h1 class="text-2xl font-bold tracking-wider drop-shadow-md"><i class="fa-solid fa-leaf mr-2"></i>MY GUEST</h1>
+            <div id="clock" class="text-sm font-medium bg-white/20 px-3 py-1 rounded-full shadow-inner">--:--:--</div>
+        </div>
+    </nav>
 
-    <!-- Navigation -->
-    <div id="nav" class="flex gap-1 mb-6 no-print text-sm">
-      <button onclick="showPage('check-in')" id="nav-check-in" class="flex-1 py-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-700 font-bold shadow-sm transition-all">บันทึกเข้า</button>
-      <button onclick="showPage('check-out')" id="nav-check-out" class="flex-1 py-3 rounded-xl border-2 border-transparent bg-white text-emerald-700 font-medium shadow-sm transition-all">ตรวจสอบออก</button>
-      <button onclick="showPage('register')" id="nav-register" class="flex-1 py-3 rounded-xl border-2 border-transparent bg-white text-emerald-700 font-medium shadow-sm transition-all">QR ลูกบ้าน</button>
-    </div>
-
-    <!-- Page: Check-In Form -->
-    <div id="page-check-in" class="page card p-6">
-      <h2 class="text-xl font-semibold mb-4 text-gray-700 flex items-center">
-        <span class="w-2 h-6 bg-emerald-500 rounded-full mr-2"></span>บันทึกผู้มาติดต่อ
-      </h2>
-      
-      <!-- 🌟 เอา onsubmit ออก เพื่อป้องกันหน้ารีเฟรชจนเป็นสีขาว -->
-      <form id="checkInForm" class="space-y-4">
+    <!-- Main Container -->
+    <div class="max-w-md mx-auto px-4" id="app-container">
         
-        <div class="flex space-x-2">
-          <div class="flex-1">
-            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">วันที่</label>
-            <input type="text" id="display-date" class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 outline-none cursor-not-allowed text-sm text-center font-medium" readonly>
-          </div>
-          <div class="flex-1">
-            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">เวลา</label>
-            <input type="text" id="display-time" class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-emerald-600 outline-none cursor-not-allowed text-sm text-center font-bold tracking-widest" readonly>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">ประเภทการติดต่อ</label>
-          <div class="grid grid-cols-2 gap-2 mb-2">
-            <label class="p-3 border rounded-xl flex items-center space-x-2 cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="contactType" value="บ้านเลขที่/ห้องชุด" checked class="accent-emerald-500" onchange="toggleRoomInput()">
-              <span class="text-sm">บ้านเลขที่/ห้องชุด</span>
-            </label>
-            <label class="p-3 border rounded-xl flex items-center space-x-2 cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="contactType" value="สำนักงานนิติฯ" class="accent-emerald-500" onchange="toggleRoomInput()">
-              <span class="text-sm">สำนักงานนิติฯ</span>
-            </label>
-            <label class="p-3 border rounded-xl flex items-center space-x-2 cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="contactType" value="เยี่ยมชมโครงการ" class="accent-emerald-500" onchange="toggleRoomInput()">
-              <span class="text-sm">เยี่ยมชมโครงการ</span>
-            </label>
-            <label class="p-3 border rounded-xl flex items-center space-x-2 cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="contactType" value="อื่นๆ" class="accent-emerald-500" onchange="toggleRoomInput()">
-              <span class="text-sm">อื่นๆ</span>
-            </label>
-          </div>
-        </div>
-
-        <div id="roomInputContainer">
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">เลขห้อง / บ้านเลขที่</label>
-          <input type="text" id="targetRoom" name="targetRoom" list="residentList" class="w-full p-3 rounded-xl border border-emerald-100 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="กำลังเชื่อมต่อฐานข้อมูล..." autocomplete="off">
-          <datalist id="residentList"></datalist>
-          <p id="resident-status" class="text-[10px] text-gray-400 mt-1 italic">กำลังโหลดข้อมูลจาก Sheet...</p>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">ข้อมูลยานพาหนะ</label>
-          <div class="grid grid-cols-2 gap-2 mb-2">
-            <label class="p-3 border rounded-xl flex items-center space-x-2 cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="vehicleType" value="รถยนต์" checked class="accent-emerald-500">
-              <span class="text-sm">🚗 รถยนต์</span>
-            </label>
-            <label class="p-3 border rounded-xl flex items-center space-x-2 cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="vehicleType" value="รถจักรยานยนต์" class="accent-emerald-500">
-              <span class="text-sm">🏍️ มอเตอร์ไซค์</span>
-            </label>
-          </div>
-          <input type="text" id="licensePlate" class="w-full p-3 rounded-xl border border-emerald-100 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="ระบุป้ายทะเบียน (เช่น กค 1234 กทม.)">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">รูปถ่ายทะเบียนรถ</label>
-          <div class="relative">
-            <input type="file" id="camera" accept="image/*" capture="environment" class="hidden" onchange="previewImage(event)">
-            <button type="button" onclick="document.getElementById('camera').click()" class="w-full py-4 rounded-xl border-2 border-dashed border-emerald-200 text-emerald-600 hover:bg-emerald-50 font-medium">
-              📸 กดเพื่อเปิดกล้องถ่ายรูป
+        <!-- Tab Navigation -->
+        <div class="flex bg-white rounded-xl shadow-md mb-6 p-1 no-print border border-gray-100">
+            <button onclick="switchTab('checkin')" id="tab-checkin" class="flex-1 py-2.5 text-center rounded-lg bg-pastel-primary text-white font-semibold shadow transition-all duration-200">
+                <i class="fa-solid fa-sign-in-alt mr-1"></i> รถเข้า
             </button>
-            <img id="imgPreview" class="mt-2 rounded-xl hidden w-full h-40 object-cover border shadow-sm">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">วัตถุประสงค์</label>
-          <div class="grid grid-cols-2 gap-2 text-sm">
-            <label class="flex items-center space-x-2 p-2 border rounded-lg cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="purpose" value="ญาติ" checked class="accent-emerald-500"> <span>ญาติ/เพื่อน</span>
-            </label>
-            <label class="flex items-center space-x-2 p-2 border rounded-lg cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="purpose" value="ส่งของ" class="accent-emerald-500"> <span>ส่งของ</span>
-            </label>
-            <label class="flex items-center space-x-2 p-2 border rounded-lg cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="purpose" value="นัดหมายไว้" class="accent-emerald-500"> <span>นัดหมายไว้</span>
-            </label>
-            <label class="flex items-center space-x-2 p-2 border rounded-lg cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="purpose" value="ผู้รับเหมา/ช่าง" class="accent-emerald-500"> <span>ผู้รับเหมา/ช่าง</span>
-            </label>
-            <label class="flex items-center space-x-2 p-2 border rounded-lg cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="purpose" value="เยี่ยมชมโครงการ" class="accent-emerald-500"> <span>เยี่ยมชมโครงการ</span>
-            </label>
-            <label class="flex items-center space-x-2 p-2 border rounded-lg cursor-pointer has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-300">
-              <input type="radio" name="purpose" value="ประชุม" class="accent-emerald-500"> <span>ประชุม</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 🌟 เปลี่ยนเป็นปุ่มธรรมดา (type="button") และจับ event ด้วย onclick -->
-        <button type="button" id="btnSubmit" onclick="handleCheckIn()" class="w-full py-4 rounded-2xl btn-green font-bold text-lg shadow-lg shadow-emerald-200 mt-4">
-          บันทึกข้อมูลและออกสลิป
-        </button>
-      </form>
-    </div>
-
-    <!-- Page: Register Resident -->
-    <div id="page-register" class="page hidden card p-6">
-      <h2 class="text-xl font-semibold mb-4 text-gray-700 flex items-center">
-        <span class="w-2 h-6 bg-emerald-500 rounded-full mr-2"></span>สร้าง QR ลงทะเบียนลูกบ้าน
-      </h2>
-      <div class="space-y-4">
-        <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl mb-4">
-          <p class="text-xs text-emerald-700 leading-relaxed">
-            📌 <b>วิธีใช้งาน:</b> ระบุเลขห้อง แล้วสร้าง QR Code เมื่อลูกบ้านสแกน ให้กด "ส่งข้อความ" ผ่านแอป LINE เพื่อลงทะเบียน
-          </p>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase mb-1">ระบุบ้านเลขที่ / ห้องชุด</label>
-          <input type="text" id="regTargetRoom" list="residentList" class="w-full p-4 rounded-xl border border-emerald-100 bg-emerald-50/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg font-bold text-emerald-800" placeholder="เช่น 34/1">
-        </div>
-
-        <button onclick="generateRegQR()" class="w-full py-4 rounded-xl btn-green font-bold shadow-md shadow-emerald-200 mt-2 text-lg">
-          สร้าง QR Code
-        </button>
-
-        <div id="regQrResult" class="hidden mt-6 text-center border-t border-dashed border-gray-200 pt-6">
-           <h3 class="text-xl font-black text-emerald-700" id="regRoomDisplay"></h3>
-           <p class="text-sm text-gray-500 mb-4 mt-1">สแกนเพื่อรับการแจ้งเตือนผู้มาติดต่อ</p>
-           
-           <div class="flex justify-center p-4 bg-white border-4 border-emerald-100 rounded-3xl mx-auto w-fit shadow-sm">
-             <img id="regQrImage" class="w-48 h-48">
-           </div>
-           
-           <div class="mt-4 p-3 bg-red-50 rounded-xl border border-red-100 inline-block animate-pulse">
-             <p class="text-xs text-red-600 font-bold">⚠️ สำคัญ: เมื่อสแกนแล้ว</p>
-             <p class="text-xs text-red-600">ให้กดส่งข้อความใน LINE เพื่อยืนยันด้วยครับ</p>
-           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Page: Slip Display -->
-    <div id="page-slip" class="page hidden text-center">
-      <div id="slip-print" class="card p-6 bg-white border-t-8 border-emerald-500">
-        <h3 class="text-2xl font-black text-emerald-700">MY Guest</h3>
-        <p class="text-[10px] text-gray-400 uppercase tracking-widest border-b pb-2 mb-4">Visitor Entry Pass</p>
-        
-        <div class="text-left space-y-2 text-sm mb-4 border-b border-dashed pb-4">
-          <div class="flex justify-between"><span class="text-gray-400">ID:</span> <span class="font-mono font-bold" id="slip-id"></span></div>
-          <div class="flex justify-between"><span class="text-gray-400">ติดต่อห้อง:</span> <span class="font-bold" id="slip-room"></span></div>
-          <div class="flex justify-between"><span class="text-gray-400">ยานพาหนะ:</span> <span class="font-bold" id="slip-vehicle"></span></div>
-          <div class="flex justify-between"><span class="text-gray-400">วัน/เวลาเข้า:</span> <span id="slip-time"></span></div>
-          <div class="flex justify-between"><span class="text-gray-400">วัตถุประสงค์:</span> <span id="slip-purpose"></span></div>
-        </div>
-
-        <div class="flex justify-center mb-4 p-2 bg-emerald-50 rounded-xl">
-          <div id="qrcode"></div>
-        </div>
-        
-        <p class="text-[10px] text-gray-500 italic leading-tight">** กรุณาให้เจ้าของห้องประทับตราผ่าน LINE **<br>และส่งคืน รปภ. เมื่อนำรถออก</p>
-      </div>
-      
-      <div class="flex flex-col gap-2 mt-6 no-print">
-        <button onclick="window.print()" class="w-full py-3 rounded-xl bg-gray-800 text-white font-medium">🖨️ พิมพ์สลิป (เครื่องพิมพ์ความร้อน)</button>
-        <button onclick="showPage('check-in')" class="w-full py-3 rounded-xl btn-green font-medium">กลับหน้าหลัก</button>
-      </div>
-    </div>
-
-    <!-- Page: Check-Out -->
-    <div id="page-check-out" class="page hidden card p-6">
-      <h2 class="text-xl font-semibold mb-4 text-gray-700">ตรวจสอบรถออก</h2>
-      <div class="space-y-4">
-        
-        <div class="relative">
-          <input type="text" id="searchId" class="w-full p-4 pl-12 rounded-xl border border-emerald-100 bg-emerald-50/50 outline-none focus:ring-2 focus:ring-emerald-500" placeholder="ระบุ Visitor ID หรือ เลือกจากรายการด้านล่าง...">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 absolute left-4 top-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        <button onclick="searchVisitor()" class="w-full py-4 rounded-xl btn-green font-bold shadow-md shadow-emerald-200">ตรวจสอบข้อมูล</button>
-        
-        <div id="checkoutInfo" class="hidden mt-4 p-4 rounded-2xl border-2 border-dashed border-gray-200 bg-white space-y-3">
-           <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-400">สถานะ:</span>
-              <span id="co-status" class="px-3 py-1 rounded-full text-xs font-bold"></span>
-           </div>
-           <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-400">วันที่ / เวลาเข้า:</span>
-              <span class="font-bold text-gray-700 text-sm"><span id="co-date"></span> <span id="co-time" class="text-emerald-600"></span></span>
-           </div>
-           <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-400">ประเภทติดต่อ:</span>
-              <span id="co-contactType" class="font-bold text-gray-700 text-sm"></span>
-           </div>
-           <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-400">ห้องที่ติดต่อ:</span>
-              <span id="co-room" class="font-bold text-gray-700 text-sm"></span>
-           </div>
-           
-           <div class="flex items-center justify-between border-t border-dashed border-gray-200 pt-3 mt-1">
-              <span class="text-sm text-gray-400">ประเภทรถ:</span>
-              <span id="co-vType" class="font-bold text-emerald-700 text-sm"></span>
-           </div>
-           <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-400">ทะเบียนรถ:</span>
-              <span id="co-lPlate" class="font-bold text-emerald-700 text-sm bg-emerald-50 px-2 py-1 rounded-md"></span>
-           </div>
-           
-           <div id="co-photo-container" class="hidden mt-2">
-              <span class="text-xs text-gray-400 mb-1 block">รูปถ่ายที่บันทึกไว้:</span>
-              <img id="co-photo" class="w-full h-32 object-cover rounded-xl border border-gray-200 shadow-sm">
-           </div>
-
-           <button id="btnCheckout" onclick="handleCheckout()" class="w-full mt-4 py-4 rounded-xl bg-orange-500 text-white font-bold shadow-lg shadow-orange-100 hidden">
-             บันทึกรถออกจากโครงการ
-           </button>
-        </div>
-
-        <div id="activeVisitorsSection" class="mt-6 border-t-2 border-dashed border-gray-100 pt-5">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="text-sm font-bold text-gray-500 flex items-center"><span class="mr-2">🚗</span> รถที่ยังไม่ออกจากโครงการ</h3>
-            <button onclick="loadActiveVisitors()" class="text-xs text-emerald-600 font-medium hover:underline flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg> รีเฟรช
+            <button onclick="switchTab('checkout')" id="tab-checkout" class="flex-1 py-2.5 text-center rounded-lg text-gray-500 font-semibold transition-all duration-200 hover:bg-gray-50">
+                <i class="fa-solid fa-sign-out-alt mr-1"></i> รถออก
             </button>
-          </div>
-          <div id="activeListContainer" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-             <!-- แสดงรายการจากระบบ -->
-          </div>
+            <!-- เพิ่มปุ่มสำหรับหน้าสร้าง QR ลูกบ้าน -->
+            <button onclick="switchTab('admin')" id="tab-admin" class="flex-1 py-2.5 text-center rounded-lg text-gray-500 font-semibold transition-all duration-200 hover:bg-gray-50">
+                <i class="fa-solid fa-qrcode mr-1"></i> QR ลูกบ้าน
+            </button>
         </div>
 
-      </div>
-    </div>
+        <!-- ======================= CHECK-IN FORM ======================= -->
+        <div id="view-checkin" class="bg-white p-6 rounded-2xl shadow-xl border-t-4 border-t-pastel-primary">
+            <h2 class="text-xl font-bold text-pastel-dark mb-5 border-b pb-2 flex items-center">
+                <i class="fa-solid fa-pen-to-square mr-2"></i> บันทึกผู้มาติดต่อ
+            </h2>
+            <form id="checkinForm" onsubmit="handleCheckin(event)">
+                
+                <!-- Date/Time Display (Auto - Not editable) -->
+                <div class="flex items-center justify-between bg-pastel-green/30 p-3 rounded-xl mb-6 border border-pastel-green shadow-sm">
+                    <div class="flex items-center text-pastel-dark font-medium text-sm">
+                        <i class="fa-regular fa-calendar-alt mr-2 text-lg"></i>
+                        <span id="dateDisplay">--/--/----</span>
+                    </div>
+                    <div class="w-px h-6 bg-pastel-primary/30"></div>
+                    <div class="flex items-center text-pastel-dark font-medium text-sm">
+                        <i class="fa-regular fa-clock mr-2 text-lg"></i>
+                        <span id="timeDisplay">--:--</span>
+                    </div>
+                </div>
 
-    <!-- Page: Resident Stamp -->
-    <div id="page-stamp" class="page hidden card p-6 text-center">
-      <h2 class="text-xl font-semibold mb-4">ประทับตราอนุมัติ</h2>
-      <div id="stamp-content">
-        <img id="stamp-img" class="rounded-xl w-full h-48 object-cover mb-4 shadow-md">
-        <p class="mb-4">ผู้มาติดต่อห้อง: <span id="stamp-room" class="font-bold text-emerald-600"></span></p>
-        <button onclick="submitStamp('Stamped')" class="w-full py-4 rounded-xl btn-green font-bold text-lg mb-2 shadow-lg">✅ อนุมัติให้เข้าพบ</button>
-        <button onclick="submitStamp('Rejected')" class="w-full py-4 rounded-xl bg-red-500 text-white font-bold text-lg shadow-lg">❌ ปฏิเสธการเข้าพบ</button>
-      </div>
-    </div>
+                <!-- Contact Type (Modern Pills) -->
+                <div class="mb-5">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">สถานที่ติดต่อ <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="contactType" value="room" class="peer sr-only" onchange="toggleContactFields()" required>
+                            <div class="text-center p-3 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 peer-checked:bg-pastel-primary peer-checked:text-white peer-checked:border-pastel-primary peer-checked:shadow-md transition-all duration-200">
+                                <i class="fa-solid fa-door-open mb-1 block text-lg"></i> บ้านเลขที่/ห้องชุด
+                            </div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="contactType" value="office" class="peer sr-only" onchange="toggleContactFields()">
+                            <div class="text-center p-3 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 peer-checked:bg-pastel-primary peer-checked:text-white peer-checked:border-pastel-primary peer-checked:shadow-md transition-all duration-200">
+                                <i class="fa-solid fa-building mb-1 block text-lg"></i> นิติบุคคลฯ
+                            </div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="contactType" value="visit" class="peer sr-only" onchange="toggleContactFields()">
+                            <div class="text-center p-3 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 peer-checked:bg-pastel-primary peer-checked:text-white peer-checked:border-pastel-primary peer-checked:shadow-md transition-all duration-200">
+                                <i class="fa-solid fa-eye mb-1 block text-lg"></i> เยี่ยมชมโครงการ
+                            </div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="contactType" value="other" class="peer sr-only" onchange="toggleContactFields()">
+                            <div class="text-center p-3 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 peer-checked:bg-pastel-primary peer-checked:text-white peer-checked:border-pastel-primary peer-checked:shadow-md transition-all duration-200">
+                                <i class="fa-solid fa-ellipsis-h mb-1 block text-lg"></i> อื่นๆ
+                            </div>
+                        </label>
+                    </div>
+                </div>
 
-  </div>
+                <!-- Dynamic Fields based on Contact Type -->
+                <div id="roomInputContainer" class="mb-5 hidden">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">ระบุเลขห้อง / บ้านเลขที่ <span class="text-red-500">*</span></label>
+                    <input type="text" id="targetRoom" list="roomList" placeholder="เช่น 123/45" class="w-full border-gray-200 rounded-xl p-3 border focus:outline-none" autocomplete="off">
+                    <datalist id="roomList">
+                        <!-- ตัวเลือกห้องจะถูกดึงมาใส่ตรงนี้โดย JavaScript -->
+                    </datalist>
+                </div>
+                <div id="otherInputContainer" class="mb-5 hidden">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">ระบุรายละเอียดสถานที่ <span class="text-red-500">*</span></label>
+                    <input type="text" id="targetOther" placeholder="โปรดระบุ" class="w-full border-gray-200 rounded-xl p-3 border focus:outline-none">
+                </div>
 
-  <script>
-    // ==========================================
-    // ⚙️ ตั้งค่าระบบ
-    // ==========================================
-    const LINE_BOT_ID = "@397vnkca"; // ไอดีบอทของคุณ
-    // ==========================================
+                <!-- Purpose -->
+                <div class="mb-5">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">วัตถุประสงค์ <span class="text-red-500">*</span></label>
+                    <select id="purpose" class="w-full border-gray-200 rounded-xl p-3 border bg-white focus:outline-none" required>
+                        <option value="">-- เลือกวัตถุประสงค์ --</option>
+                        <option value="ญาติ/เพื่อน">ญาติ / เพื่อน</option>
+                        <option value="นัดหมายไว้">นัดหมายไว้ล่วงหน้า</option>
+                        <option value="ส่งของ/อาหาร">ส่งของ / อาหาร (Rider)</option>
+                        <option value="ช่าง/ตกแต่งต่อเติม">ช่าง / ตกแต่งต่อเติม</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                </div>
 
-    let currentPhoto = "";
-    let currentVisitorId = "";
+                <!-- Divider -->
+                <hr class="my-5 border-gray-100">
 
-    function updateClock() {
-      const now = new Date();
-      const dateEl = document.getElementById('display-date');
-      const timeEl = document.getElementById('display-time');
-      if (dateEl && timeEl) {
-        dateEl.value = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-        timeEl.value = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      }
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
+                <!-- Vehicle Type -->
+                <div class="mb-5">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">ประเภทรถ <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <label class="cursor-pointer relative">
+                            <!-- ใช้ peer sr-only เพื่อซ่อนปุ่มวงกลม แต่ยัง focus/submit ได้ปกติ -->
+                            <input type="radio" name="vehicleType" value="รถยนต์" class="peer sr-only" required>
+                            <div class="text-center p-3 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 peer-checked:bg-pastel-primary peer-checked:text-white peer-checked:border-pastel-primary peer-checked:shadow-md transition-all duration-200">
+                                <i class="fa-solid fa-car mr-2"></i> รถยนต์
+                            </div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="vehicleType" value="รถจักรยานยนต์" class="peer sr-only" required>
+                            <div class="text-center p-3 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 peer-checked:bg-pastel-primary peer-checked:text-white peer-checked:border-pastel-primary peer-checked:shadow-md transition-all duration-200">
+                                <i class="fa-solid fa-motorcycle mr-2"></i> รถจักรยานยนต์
+                            </div>
+                        </label>
+                    </div>
+                </div>
 
-    document.addEventListener('DOMContentLoaded', function() {
-      const statusText = document.getElementById('resident-status');
-      if(statusText) statusText.innerText = "กำลังดึงข้อมูลลูกบ้าน...";
-      
-      // ดัก Error กรณีเปิดนอก Google Apps Script
-      if (typeof google === 'undefined') {
-        if(statusText) statusText.innerText = "กำลังรันในโหมดพรีวิว";
-        return;
-      }
-      
-      google.script.run
-        .withSuccessHandler(populateResidents)
-        .withFailureHandler(function(error) {
-          if(statusText) {
-            statusText.innerText = "❌ โหลดข้อมูลล้มเหลว";
-            statusText.classList.replace('text-gray-400', 'text-red-500');
-          }
-        })
-        .getResidents();
-        
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('page') === 'stamp') {
-        currentVisitorId = params.get('id');
-        showStampPage(currentVisitorId);
-      }
-    });
+                <!-- License Plate Input -->
+                <div class="mb-5">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">เลขทะเบียนรถ <span class="text-red-500">*</span></label>
+                    <input type="text" id="licensePlate" placeholder="เช่น กข 1234 กทม." class="w-full border-gray-200 rounded-xl p-3 border focus:outline-none" required>
+                </div>
 
-    function populateResidents(data) {
-      const list = document.getElementById('residentList');
-      const input = document.getElementById('targetRoom');
-      const status = document.getElementById('resident-status');
-      
-      if(list && input) {
-        list.innerHTML = data.map(r => `<option value="${r.room}">`).join('');
-        if(status) {
-          status.innerText = `✅ เชื่อมต่อฐานข้อมูลแล้ว`;
-          status.classList.replace('text-gray-400', 'text-emerald-500');
-          status.classList.remove('italic');
-        }
-      }
-    }
+                <!-- Camera / License Plate Image -->
+                <div class="mb-8">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">ภาพถ่ายทะเบียนรถ / ผู้มาติดต่อ <span class="text-red-500">*</span></label>
+                    <div class="border-2 border-dashed border-pastel-primary bg-pastel-green/10 hover:bg-pastel-green/30 rounded-2xl p-6 text-center cursor-pointer transition-colors duration-200" onclick="document.getElementById('cameraInput').click()">
+                        <!-- เอา required ออกจาก input file ที่ซ่อนไว้ ป้องกันเบราว์เซอร์แจ้งเตือนค้างเวลาส่งฟอร์ม -->
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="previewImage(event)">
+                        <div class="bg-white w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-pastel-primary border border-pastel-green">
+                            <i class="fa-solid fa-camera text-2xl"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-pastel-dark" id="cameraText">แตะเพื่อเปิดกล้องถ่ายรูป</p>
+                    </div>
+                    <img id="imagePreview" class="mt-4 rounded-xl w-full hidden object-cover max-h-56 border-2 border-gray-100 shadow-sm">
+                </div>
 
-    function toggleRoomInput() {
-      const type = document.querySelector('input[name="contactType"]:checked').value;
-      document.getElementById('roomInputContainer').style.display = (type === 'บ้านเลขที่/ห้องชุด') ? 'block' : 'none';
-    }
-
-    function previewImage(event) {
-      if (!event.target.files || !event.target.files[0]) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('imgPreview').src = e.target.result;
-        document.getElementById('imgPreview').classList.remove('hidden');
-        currentPhoto = e.target.result;
-      }
-      reader.readAsDataURL(event.target.files[0]);
-    }
-
-    // 🌟 แก้ไขฟังก์ชันการคลิกบันทึก
-    function handleCheckIn() {
-      // ตรวจสอบความถูกต้องเบื้องต้น
-      const contactType = document.querySelector('input[name="contactType"]:checked').value;
-      const targetRoom = document.getElementById('targetRoom').value;
-
-      if (contactType === 'บ้านเลขที่/ห้องชุด' && !targetRoom) {
-        return Swal.fire('แจ้งเตือน', 'กรุณาระบุเลขห้องที่ต้องการติดต่อ', 'warning');
-      }
-
-      const btn = document.getElementById('btnSubmit');
-      btn.disabled = true;
-
-      // 🌟 เพิ่ม Popup โหลดดักไว้ ป้องกันคลิกซ้ำ และให้รู้ว่าระบบทำงานอยู่
-      Swal.fire({
-        title: 'กำลังบันทึกข้อมูล...',
-        text: 'กรุณารอสักครู่ ระบบกำลังส่งข้อมูลเข้า Sheet และแจ้งเตือนผ่าน LINE',
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => {
-          Swal.showLoading();
-        }
-      });
-
-      const formData = {
-        contactType: contactType,
-        targetRoom: targetRoom || '-',
-        vehicleType: document.querySelector('input[name="vehicleType"]:checked').value,
-        licensePlate: document.getElementById('licensePlate').value || 'ไม่ระบุ',
-        purpose: document.querySelector('input[name="purpose"]:checked').value,
-        image: currentPhoto
-      };
-
-      if (typeof google === 'undefined') return; // กันพังตอนพรีวิว
-
-      google.script.run
-        .withSuccessHandler(res => {
-          btn.disabled = false;
-          Swal.close(); // ปิด Popup โหลด
-          
-          if(res.success) {
-            showSlip(res);
-          } else {
-            Swal.fire('ผิดพลาดจากระบบหลังบ้าน', res.error, 'error');
-          }
-        })
-        .withFailureHandler(err => {
-          btn.disabled = false;
-          Swal.close(); // ปิด Popup โหลด
-          Swal.fire('ข้อผิดพลาดการเชื่อมต่อ', 'ไม่สามารถบันทึกได้ กรุณาลองใหม่อีกครั้ง', 'error');
-        })
-        .saveVisitor(formData);
-    }
-
-    function showSlip(res) {
-      document.getElementById('slip-id').innerText = res.id;
-      document.getElementById('slip-room').innerText = res.data[5];
-      document.getElementById('slip-vehicle').innerText = `${res.data[9]} (${res.data[10]})`;
-      document.getElementById('slip-time').innerText = res.data[1] + ' ' + res.data[2];
-      document.getElementById('slip-purpose').innerText = res.data[7];
-      
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${res.id}`;
-      document.getElementById('qrcode').innerHTML = `<img src="${qrUrl}" alt="QR" class="w-32 h-32">`;
-      showPage('slip');
-    }
-
-    function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-      document.getElementById('page-' + pageId).classList.remove('hidden');
-      
-      const pages = ['check-in', 'check-out', 'register'];
-      pages.forEach(p => {
-        const nav = document.getElementById('nav-' + p);
-        if (nav) {
-          if (p === pageId) {
-            nav.classList.add('border-emerald-500', 'bg-emerald-50', 'font-bold');
-            nav.classList.remove('border-transparent', 'bg-white', 'font-medium');
-          } else {
-            nav.classList.remove('border-emerald-500', 'bg-emerald-50', 'font-bold');
-            nav.classList.add('border-transparent', 'bg-white', 'font-medium');
-          }
-        }
-      });
-
-      if(pageId === 'check-in') {
-        document.getElementById('checkInForm').reset();
-        document.getElementById('imgPreview').classList.add('hidden');
-        currentPhoto = "";
-        toggleRoomInput();
-      } else if(pageId === 'check-out') {
-        document.getElementById('checkoutInfo').classList.add('hidden');
-        document.getElementById('searchId').value = '';
-        loadActiveVisitors();
-      } else if(pageId === 'register') {
-        document.getElementById('regQrResult').classList.add('hidden');
-        document.getElementById('regTargetRoom').value = '';
-      }
-    }
-
-    let activeVisitorsTimeout;
-    function loadActiveVisitors() {
-      const container = document.getElementById('activeListContainer');
-      container.innerHTML = `
-        <div class="flex justify-center items-center py-6">
-          <svg class="animate-spin h-6 w-6 text-emerald-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span class="text-sm text-gray-500">กำลังดึงข้อมูลล่าสุด...</span>
+                <!-- Submit Button -->
+                <button type="submit" class="w-full bg-pastel-primary hover:bg-pastel-dark text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex justify-center items-center text-lg transform hover:-translate-y-0.5">
+                    <i class="fa-solid fa-save mr-2"></i> บันทึกข้อมูลเข้า
+                </button>
+            </form>
         </div>
-      `;
-      
-      clearTimeout(activeVisitorsTimeout);
-      activeVisitorsTimeout = setTimeout(() => {
-        if (container.innerHTML.includes('กำลังดึงข้อมูลล่าสุด')) {
-          container.innerHTML = '<div class="p-4 border border-dashed border-red-200 rounded-xl bg-red-50 text-center"><p class="text-sm text-red-500">❌ โหลดนานผิดปกติ กรุณารีเฟรช</p></div>';
-        }
-      }, 10000); 
 
-      if (typeof google === 'undefined') return;
+        <!-- ======================= SLIP / PRINT VIEW ======================= -->
+        <div id="view-slip" class="hidden">
+            <div id="print-slip-area" class="bg-white p-6 rounded-2xl shadow-xl border-t-8 border-pastel-primary mb-5 text-center mx-auto max-w-sm">
+                <h1 class="text-2xl font-bold text-gray-800"><i class="fa-solid fa-leaf text-pastel-primary"></i> MY GUEST</h1>
+                <p class="text-xs text-gray-500 mb-4 border-b pb-3">บัตรผ่านผู้มาติดต่อ (Visitor Pass)</p>
+                
+                <div class="text-left text-sm space-y-2 mb-5 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <p><strong>รหัส (ID):</strong> <span id="slip-id" class="text-pastel-dark font-bold">--</span></p>
+                    <p><strong>วันที่:</strong> <span id="slip-date">--</span></p>
+                    <p><strong>เวลาเข้า:</strong> <span id="slip-time">--</span></p>
+                    <p><strong>สถานที่ติดต่อ:</strong> <span id="slip-target" class="font-bold text-black">--</span></p>
+                    <p><strong>วัตถุประสงค์:</strong> <span id="slip-purpose">--</span></p>
+                    <p><strong>ประเภทรถ:</strong> <span id="slip-vehicle">--</span></p>
+                    <p><strong>ทะเบียนรถ:</strong> <span id="slip-license" class="font-bold text-black">--</span></p>
+                </div>
 
-      google.script.run
-        .withSuccessHandler((data) => {
-           clearTimeout(activeVisitorsTimeout);
-           renderActiveVisitors(data);
-        })
-        .withFailureHandler(function(error) {
-           clearTimeout(activeVisitorsTimeout);
-           container.innerHTML = `<div class="p-4 border border-dashed border-red-200 rounded-xl bg-red-50 text-center"><p class="text-sm text-red-500">❌ ดึงข้อมูลล้มเหลว</p></div>`;
-        })
-        .getActiveVisitors();
-    }
-
-    function renderActiveVisitors(data) {
-      const container = document.getElementById('activeListContainer');
-      if(!data || data.length === 0) {
-        container.innerHTML = '<div class="p-4 border border-dashed rounded-xl bg-gray-50 text-center"><p class="text-sm text-gray-400">ไม่มีรถตกค้างในโครงการ</p></div>';
-        return;
-      }
-      
-      let html = '';
-      data.forEach(v => {
-        let statusBadge = v.status === 'Stamped' 
-          ? '<span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">ประทับตราแล้ว</span>' 
-          : '<span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">รอประทับตรา</span>';
-          
-        html += `
-          <div class="p-3 border rounded-xl flex justify-between items-center bg-white shadow-sm hover:border-emerald-300 transition-all cursor-pointer" onclick="selectActiveVisitor('${v.id}')">
-            <div class="flex-1">
-              <div class="flex items-center space-x-2">
-                <p class="font-bold text-emerald-700 text-sm">${v.licensePlate}</p>
-                ${statusBadge}
-              </div>
-              <p class="text-xs text-gray-400 mt-1">เวลาเข้า: ${v.time} | ห้อง: <span class="font-medium text-gray-600">${v.room}</span></p>
+                <div class="flex justify-center mb-3">
+                    <div id="qrcode" class="p-3 bg-white border-2 border-gray-100 rounded-xl shadow-sm"></div>
+                </div>
+                <p class="text-[10px] text-gray-400">สแกนเพื่อตรวจสอบสถานะ / ประทับตราออก</p>
+                
+                <div class="mt-5 pt-5 border-t-2 border-dashed border-gray-200 text-left">
+                    <p class="text-xs text-gray-500 mb-8 text-center">ลายมือชื่อผู้ได้รับการติดต่อ / ประทับตรา</p>
+                    <p class="text-xs text-center text-gray-400">_________________________________</p>
+                </div>
             </div>
-            <button type="button" class="text-xs bg-emerald-50 text-emerald-600 px-3 py-2 rounded-lg font-bold hover:bg-emerald-100 ml-2">เลือก</button>
-          </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
-
-    function selectActiveVisitor(id) {
-      document.getElementById('searchId').value = id;
-      searchVisitor();
-    }
-
-    function searchVisitor() {
-      const id = document.getElementById('searchId').value;
-      if(!id) return Swal.fire('แจ้งเตือน', 'กรุณาระบุ ID ก่อนตรวจสอบ', 'warning');
-      
-      Swal.fire({
-        title: 'กำลังตรวจสอบข้อมูล...',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-      });
-      
-      if (typeof google === 'undefined') return;
-
-      google.script.run
-        .withSuccessHandler(v => {
-          Swal.close();
-          if(v) {
-            const info = document.getElementById('checkoutInfo');
-            const badge = document.getElementById('co-status'); 
-            info.classList.remove('hidden');
             
-            document.getElementById('co-room').innerText = v.room;
-            document.getElementById('co-date').innerText = v.date;
-            document.getElementById('co-time').innerText = v.time;
-            document.getElementById('co-contactType').innerText = v.contactType;
-            document.getElementById('co-vType').innerText = v.vehicleType;
-            document.getElementById('co-lPlate').innerText = v.licensePlate;
+            <div class="flex gap-3 no-print">
+                <button onclick="window.print()" class="flex-1 bg-gray-800 hover:bg-black text-white py-3.5 rounded-xl font-bold shadow-md flex justify-center items-center transition-colors">
+                    <i class="fa-solid fa-print mr-2"></i> พิมพ์สลิป
+                </button>
+                <button onclick="resetForm()" class="flex-1 bg-pastel-primary hover:bg-pastel-dark text-white py-3.5 rounded-xl font-bold shadow-md flex justify-center items-center transition-colors">
+                    <i class="fa-solid fa-plus mr-2"></i> คันต่อไป
+                </button>
+            </div>
+        </div>
+
+        <!-- ======================= CHECK-OUT VIEW ======================= -->
+        <div id="view-checkout" class="hidden bg-white p-6 rounded-2xl shadow-xl border-t-4 border-t-pastel-primary">
+            <h2 class="text-xl font-bold text-gray-800 mb-5 border-b pb-2 flex items-center">
+                <i class="fa-solid fa-car-side mr-2 text-pastel-primary"></i> บันทึกรถออก
+            </h2>
             
-            const photoContainer = document.getElementById('co-photo-container');
-            if(v.photoUrl) {
-              document.getElementById('co-photo').src = v.photoUrl;
-              photoContainer.classList.remove('hidden');
-            } else {
-              photoContainer.classList.add('hidden');
+            <div class="mb-5">
+                <label class="block text-sm font-bold text-gray-700 mb-2">รหัสผู้มาติดต่อ / สแกน QR</label>
+                <div class="flex shadow-sm rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-pastel-primary focus-within:border-pastel-primary transition-all">
+                    <input type="text" id="checkoutSearch" placeholder="ระบุ ID (เช่น V12345)" class="flex-1 p-3 border-none focus:outline-none">
+                    <button onclick="searchVisitor()" class="bg-pastel-primary text-white px-5 hover:bg-pastel-dark transition-colors font-bold">
+                        <i class="fa-solid fa-search"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-400 mt-2 text-center"><i class="fa-solid fa-barcode mr-1"></i> (สามารถใช้เครื่องสแกนบาร์โค้ดยิงใส่ช่องด้านบนได้)</p>
+            </div>
+
+            <div id="checkoutResult" class="hidden mt-6 p-5 rounded-xl border-2 shadow-sm transition-all duration-300">
+                <!-- Result will be populated by JS -->
+            </div>
+        </div>
+
+        <!-- ======================= RESIDENT APPROVAL VIEW (MOCK) ======================= -->
+        <div id="view-resident" class="hidden bg-white p-6 rounded-2xl shadow-xl border-t-8 border-pastel-primary text-center">
+            <div class="w-20 h-20 bg-pastel-green rounded-full flex items-center justify-center mx-auto mb-5 text-pastel-dark text-4xl shadow-inner border-4 border-white">
+                <i class="fa-solid fa-house-user"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">ระบบประทับตราออนไลน์</h2>
+            <p class="text-sm text-gray-500 mb-6 bg-gray-100 py-1 px-3 rounded-full inline-block">มีผู้มาติดต่อห้อง/บ้านของท่าน</p>
+            
+            <div class="bg-gray-50 p-4 rounded-xl text-left text-sm mb-6 border border-gray-100 shadow-sm">
+                <p class="mb-2"><strong>รหัส:</strong> <span id="res-id" class="text-pastel-dark font-bold">--</span></p>
+                <p class="mb-2"><strong>เวลาเข้า:</strong> <span id="res-time">--</span></p>
+                <p class="mb-1"><strong>วัตถุประสงค์:</strong> <span id="res-purpose">--</span></p>
+            </div>
+
+            <button onclick="residentAction('Approved')" class="w-full bg-pastel-primary hover:bg-pastel-dark text-white py-3.5 rounded-xl font-bold shadow-md hover:shadow-lg transition-all mb-3 flex justify-center items-center text-lg">
+                <i class="fa-solid fa-check-circle mr-2 text-xl"></i> ประทับตราอนุมัติ
+            </button>
+            <button onclick="residentAction('Rejected')" class="w-full bg-red-500 hover:bg-red-600 text-white py-3.5 rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex justify-center items-center text-lg">
+                <i class="fa-solid fa-times-circle mr-2 text-xl"></i> ปฏิเสธการเข้าพบ
+            </button>
+        </div>
+
+        <!-- ======================= ADMIN GENERATE QR VIEW (เพิ่มใหม่) ======================= -->
+        <div id="view-admin" class="hidden bg-white p-6 rounded-2xl shadow-xl border-t-4 border-t-pastel-primary">
+            <h2 class="text-xl font-bold text-gray-800 mb-5 border-b pb-2 flex items-center">
+                <i class="fa-solid fa-qrcode mr-2 text-pastel-primary"></i> สร้าง QR Code ลงทะเบียนลูกบ้าน
+            </h2>
+            <div class="mb-5">
+                <label class="block text-sm font-bold text-gray-700 mb-2">ระบุบ้านเลขที่ / ห้องชุด</label>
+                <div class="flex shadow-sm rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-pastel-primary focus-within:border-pastel-primary transition-all">
+                    <input type="text" id="adminRoomInput" list="roomList" placeholder="เช่น 123/45" class="flex-1 p-3 border-none focus:outline-none" autocomplete="off">
+                    <button onclick="generateResidentQR()" class="bg-pastel-primary text-white px-5 hover:bg-pastel-dark transition-colors font-bold">
+                        สร้าง QR
+                    </button>
+                </div>
+                <p class="text-xs text-gray-400 mt-2 text-center">พิมพ์แล้วกดสร้าง ให้ลูกบ้านสแกนเพื่อผูก LINE</p>
+            </div>
+            <div id="adminQrResult" class="hidden mt-6 text-center">
+                <p class="text-lg font-bold text-pastel-dark mb-2" id="qrRoomLabel"></p>
+                <div class="flex justify-center bg-white p-4 border-2 border-gray-100 rounded-xl shadow-sm inline-block">
+                    <div id="residentQrcode"></div>
+                </div>
+                <p class="text-sm mt-3 text-gray-600 font-bold text-red-500"><i class="fa-brands fa-line mr-1"></i> ให้ลูกบ้านใช้แอป LINE สแกนเท่านั้น</p>
+            </div>
+        </div>
+
+        <!-- ======================= LIFF REGISTER VIEW (เพิ่มใหม่ - หน้าที่ลูกบ้านจะเห็น) ======================= -->
+        <div id="view-register" class="hidden bg-white p-6 rounded-2xl shadow-xl border-t-8 border-pastel-primary text-center">
+            <div id="reg-loading">
+                <i class="fa-solid fa-spinner fa-spin text-4xl text-pastel-primary mb-4"></i>
+                <h2 class="text-xl font-bold text-gray-800">กำลังเชื่อมต่อ LINE...</h2>
+                <p class="text-sm text-gray-500 mt-2" id="reg-room-text">กรุณารอสักครู่</p>
+            </div>
+            <div id="reg-result" class="hidden">
+                <div class="w-20 h-20 bg-pastel-green rounded-full flex items-center justify-center mx-auto mb-5 text-pastel-dark text-4xl shadow-inner border-4 border-white">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">ลงทะเบียนสำเร็จ!</h2>
+                <p class="text-sm text-gray-600 mb-2">ผูกบัญชีกับห้อง: <span id="res-success-room" class="font-bold text-pastel-dark text-lg">--</span></p>
+                <p class="text-xs text-gray-500 bg-gray-100 py-3 px-3 rounded-lg mt-4">ระบบได้บันทึก LINE ID ของท่านแล้ว ท่านจะได้รับการแจ้งเตือนเมื่อมีผู้มาติดต่อ (ท่านสามารถปิดหน้านี้ได้ทันที)</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // --- การตั้งค่า LIFF ID สำหรับลงทะเบียนลูกบ้าน (เพิ่มบรรทัดนี้ไว้บนสุดของ script) ---
+        const MY_LIFF_ID = "ใส่_LIFF_ID_ของคุณที่นี่"; // <- เอา LIFF ID มาใส่ตรงนี้
+
+        // ฟังก์ชันครอบจักรวาล เพื่อป้องกัน Error เวลาค้นหา Element
+        const getEl = (id) => document.getElementById(id);
+
+        // ==========================================
+        // 1. ระบบจัดการเวลา
+        // ==========================================
+        function initClock() {
+            try {
+                const clockEl = getEl('clock');
+                const dateDisplay = getEl('dateDisplay');
+                const timeDisplay = getEl('timeDisplay');
+                const viewCheckin = getEl('view-checkin');
+
+                function updateTime() {
+                    const now = new Date();
+                    if (clockEl) clockEl.innerText = now.toLocaleTimeString('th-TH');
+                    
+                    if (viewCheckin && !viewCheckin.classList.contains('hidden')) {
+                        if (dateDisplay) dateDisplay.innerText = now.toLocaleDateString('th-TH');
+                        if (timeDisplay) timeDisplay.innerText = now.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'});
+                    }
+                }
+                
+                updateTime(); // รันทันที 1 ครั้ง
+                setInterval(updateTime, 1000); // ตั้งเวลารันทุกวินาที
+            } catch (err) {
+                console.error("Clock Init Error:", err);
             }
-            
-            currentVisitorId = v.id;
-            
-            if(v.status === 'Stamped') {
-              badge.innerText = "ประทับตราแล้ว";
-              badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 bg-green-100 text-green-700";
-              document.getElementById('btnCheckout').classList.remove('hidden');
-            } else if(v.status === 'Checked-Out') {
-              badge.innerText = "ออกจากโครงการไปแล้ว";
-              badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 bg-gray-100 text-gray-700";
-              document.getElementById('btnCheckout').classList.add('hidden');
-            } else {
-              badge.innerText = "ยังไม่ประทับตรา";
-              badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 bg-red-100 text-red-700";
-              document.getElementById('btnCheckout').classList.remove('hidden');
+        }
+
+        // ==========================================
+        // 2. ระบบจัดการแท็บเมนู
+        // ==========================================
+        function switchTab(tab) {
+            try {
+                // ซ่อนเนื้อหาทุกหน้า
+                const views = ['view-checkin', 'view-checkout', 'view-slip', 'view-resident', 'view-admin', 'view-register'];
+                views.forEach(id => {
+                    const el = getEl(id);
+                    if (el) el.classList.add('hidden');
+                });
+                
+                // รีเซ็ตสไตล์ของปุ่มเมนูทั้งหมด
+                const tabs = ['tab-checkin', 'tab-checkout', 'tab-admin'];
+                tabs.forEach(id => {
+                    const el = getEl(id);
+                    if (el) el.className = "flex-1 py-2.5 text-center rounded-lg text-gray-500 font-semibold transition-all duration-200 hover:bg-gray-50";
+                });
+
+                // แสดงหน้าที่ต้องการ และไฮไลต์ปุ่ม
+                const activeView = getEl('view-' + tab);
+                const activeTab = getEl('tab-' + tab);
+
+                if (activeView) activeView.classList.remove('hidden');
+                if (activeTab) activeTab.className = "flex-1 py-2.5 text-center rounded-lg bg-pastel-primary text-white font-semibold shadow transition-all duration-200";
+            } catch (err) {
+                console.error("Tab Switch Error:", err);
             }
-          } else {
-            Swal.fire('ไม่พบข้อมูล', 'ไม่พบรหัสผู้ติดต่อนี้', 'error');
-          }
-        })
-        .withFailureHandler(err => {
-          Swal.close();
-          Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
-        })
-        .getVisitorById(id);
-    }
-
-    function handleCheckout() {
-      Swal.fire({
-        title: 'ยืนยันนำรถออก?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10b981',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'ยืนยัน',
-        cancelButtonText: 'ยกเลิก'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          Swal.fire({
-            title: 'กำลังบันทึกข้อมูล...',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-          });
-          
-          if (typeof google === 'undefined') return;
-
-          google.script.run
-            .withSuccessHandler(() => {
-              Swal.close();
-              Swal.fire('สำเร็จ', 'บันทึกเวลาออกเรียบร้อย', 'success');
-              showPage('check-in');
-              document.getElementById('checkoutInfo').classList.add('hidden');
-              document.getElementById('searchId').value = '';
-            })
-            .withFailureHandler(err => {
-              Swal.close();
-              Swal.fire('ข้อผิดพลาด', 'บันทึกข้อมูลล้มเหลว', 'error');
-            })
-            .updateVisitorStatus(currentVisitorId, 'Checked-Out');
         }
-      });
-    }
 
-    function showStampPage(id) {
-      if (typeof google === 'undefined') return;
-      google.script.run.withSuccessHandler(v => {
-        if(v) {
-          document.getElementById('nav').style.display = 'none';
-          document.getElementById('stamp-room').innerText = v.room;
-          document.getElementById('stamp-img').src = v.photoUrl || "https://dummyimage.com/600x400/cccccc/ffffff&text=No+Image";
-          showPage('stamp');
+        function toggleContactFields() {
+            try {
+                const typeNode = document.querySelector('input[name="contactType"]:checked');
+                if (!typeNode) return;
+                const type = typeNode.value;
+                
+                getEl('roomInputContainer').classList.add('hidden');
+                getEl('otherInputContainer').classList.add('hidden');
+                getEl('targetRoom').required = false;
+                getEl('targetOther').required = false;
+
+                if (type === 'room') {
+                    getEl('roomInputContainer').classList.remove('hidden');
+                    getEl('targetRoom').required = true;
+                } else if (type === 'other') {
+                    getEl('otherInputContainer').classList.remove('hidden');
+                    getEl('targetOther').required = true;
+                }
+            } catch (err) {
+                console.error("Toggle Fields Error:", err);
+            }
         }
-      }).getVisitorById(id);
-    }
 
-    function submitStamp(status) {
-      if (typeof google === 'undefined') return;
-      google.script.run.withSuccessHandler(() => {
-        document.getElementById('stamp-content').innerHTML = `
-          <div class="py-10">
-            <div class="text-6xl mb-4 text-emerald-500">✅</div>
-            <h3 class="text-2xl font-bold text-emerald-700">บันทึกสำเร็จ</h3>
-            <p class="text-gray-500 mt-2">ขอบคุณที่ใช้บริการ MY Guest</p>
-          </div>
-        `;
-      }).updateVisitorStatus(currentVisitorId, status);
-    }
+        // ==========================================
+        // 3. ระบบจัดการรูปภาพ (บีบอัด Base64)
+        // ==========================================
+        let base64Image = "";
+        function previewImage(event) {
+            try {
+                const file = event.target.files[0];
+                if (!file) return;
 
-    function generateRegQR() {
-      const room = document.getElementById('regTargetRoom').value;
-      const botId = LINE_BOT_ID; 
-      
-      if (!room) return Swal.fire('แจ้งเตือน', 'กรุณาระบุบ้านเลขที่ ที่ต้องการสร้าง QR Code', 'warning');
-      
-      const textMessage = "#REG-" + room;
-      const lineUrl = `https://line.me/R/oaMessage/${botId}/?${encodeURIComponent(textMessage)}`;
-      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(lineUrl)}`;
-      
-      document.getElementById('regQrImage').src = qrApiUrl;
-      document.getElementById('regRoomDisplay').innerText = `ผูกบัญชีบ้านเลขที่: ${room}`;
-      document.getElementById('regQrResult').classList.remove('hidden');
-    }
-  </script>
+                const textLabel = getEl('cameraText');
+                if (textLabel) textLabel.innerText = "กำลังประมวลผลรูปภาพ...";
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        base64Image = canvas.toDataURL('image/jpeg', 0.7); 
+                        const preview = getEl('imagePreview');
+                        if (preview) {
+                            preview.src = base64Image;
+                            preview.classList.remove('hidden');
+                        }
+                        if (textLabel) textLabel.innerText = "เปลี่ยนรูปถ่าย";
+                    }
+                    img.onerror = function() {
+                        Swal.fire('Error', 'ไม่สามารถประมวลผลรูปภาพได้ โปรดถ่ายรูปใหม่', 'error');
+                        if (textLabel) textLabel.innerText = "แตะเพื่อเปิดกล้องถ่ายรูป";
+                    }
+                    img.src = e.target.result;
+                }
+                reader.onerror = function() {
+                    Swal.fire('Error', 'เกิดข้อผิดพลาดในการอ่านไฟล์', 'error');
+                    if (textLabel) textLabel.innerText = "แตะเพื่อเปิดกล้องถ่ายรูป";
+                }
+                reader.readAsDataURL(file);
+            } catch (err) {
+                console.error("Image Preview Error:", err);
+            }
+        }
+
+        // ==========================================
+        // 4. ระบบบันทึกข้อมูลและ Check-in/out
+        // ==========================================
+        function handleCheckin(e) {
+            e.preventDefault();
+            
+            if (!base64Image || !base64Image.includes(',')) {
+                Swal.fire('แจ้งเตือน', 'กรุณาถ่ายรูป / อัปโหลดรูปภาพให้เรียบร้อยก่อนกดบันทึก', 'warning');
+                return;
+            }
+
+            try {
+                const typeRadio = document.querySelector('input[name="contactType"]:checked');
+                let targetText = "";
+                if(typeRadio.value === 'room') targetText = "ห้อง " + getEl('targetRoom').value;
+                else if(typeRadio.value === 'office') targetText = "สำนักงานนิติบุคคล";
+                else if(typeRadio.value === 'visit') targetText = "เยี่ยมชมโครงการ";
+                else targetText = "อื่นๆ: " + getEl('targetOther').value;
+
+                const vehicleRadio = document.querySelector('input[name="vehicleType"]:checked');
+
+                const payload = {
+                    date: getEl('dateDisplay').innerText,
+                    time: getEl('timeDisplay').innerText,
+                    contactType: typeRadio.value,
+                    target: targetText,
+                    vehicleType: vehicleRadio ? vehicleRadio.value : '-',
+                    licensePlate: getEl('licensePlate').value,
+                    purpose: getEl('purpose').value,
+                    image: base64Image.split(',')[1] 
+                };
+
+                Swal.fire({
+                    title: 'กำลังบันทึกข้อมูล...',
+                    text: 'กรุณารอสักครู่ ระบบกำลังสื่อสารกับเซิร์ฟเวอร์',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    google.script.run
+                        .withSuccessHandler(showSlip)
+                        .withFailureHandler(err => {
+                            Swal.fire('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+                        })
+                        .saveVisitorData(payload);
+                } else {
+                    setTimeout(() => {
+                        const mockId = "V" + Math.floor(Date.now() / 1000).toString().slice(-6);
+                        showSlip({
+                            id: mockId,
+                            date: payload.date,
+                            time: payload.time,
+                            target: payload.target,
+                            purpose: payload.purpose,
+                            vehicleType: payload.vehicleType,
+                            licensePlate: payload.licensePlate
+                        });
+                        window.mockDB = window.mockDB || {};
+                        window.mockDB[mockId] = { ...payload, id: mockId, status: 'Pending' };
+                    }, 1500);
+                }
+            } catch (err) {
+                Swal.fire('Error', 'เกิดข้อผิดพลาดในการรวบรวมข้อมูล: ' + err.message, 'error');
+            }
+        }
+
+        function showSlip(data) {
+            try {
+                Swal.close(); 
+                
+                getEl('view-checkin').classList.add('hidden');
+                getEl('view-slip').classList.remove('hidden');
+
+                getEl('slip-id').innerText = data.id;
+                getEl('slip-date').innerText = data.date;
+                getEl('slip-time').innerText = data.time;
+                getEl('slip-target').innerText = data.target;
+                getEl('slip-purpose').innerText = data.purpose;
+                getEl('slip-vehicle').innerText = data.vehicleType || '-';
+                getEl('slip-license').innerText = data.licensePlate || '-';
+
+                const qrcodeEl = getEl('qrcode');
+                qrcodeEl.innerHTML = "";
+                new QRCode(qrcodeEl, {
+                    text: "https://myguest.web.app/?view=resident&id=" + data.id, 
+                    width: 120,
+                    height: 120,
+                    colorDark : "#059669",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกสำเร็จ',
+                    text: 'สามารถพิมพ์สลิปให้ผู้มาติดต่อได้ทันที',
+                    confirmButtonColor: '#34d399'
+                });
+            } catch (err) {
+                console.error("Show Slip Error:", err);
+            }
+        }
+
+        function resetForm() {
+            getEl('checkinForm').reset();
+            const preview = getEl('imagePreview');
+            if(preview) {
+                preview.classList.add('hidden');
+                preview.src = "";
+            }
+            base64Image = "";
+            const camText = getEl('cameraText');
+            if(camText) camText.innerText = "แตะเพื่อเปิดกล้องถ่ายรูป";
+            toggleContactFields();
+            getEl('view-slip').classList.add('hidden');
+            getEl('view-checkin').classList.remove('hidden');
+        }
+
+        function searchVisitor() {
+            const searchInput = getEl('checkoutSearch');
+            if(!searchInput) return;
+            const searchId = searchInput.value.trim();
+            if(!searchId) return;
+
+            Swal.fire({ title: 'กำลังค้นหา...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+            try {
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    google.script.run
+                        .withSuccessHandler(renderCheckoutResult)
+                        .withFailureHandler(err => Swal.fire('Error', err.message || 'ไม่พบข้อมูล', 'error'))
+                        .getVisitorData(searchId);
+                } else {
+                    setTimeout(() => {
+                        const data = window.mockDB ? window.mockDB[searchId] : null;
+                        if(data) renderCheckoutResult(data);
+                        else Swal.fire('Error', 'ไม่พบข้อมูลรหัสดังกล่าว', 'error');
+                    }, 800);
+                }
+            } catch (err) {
+                Swal.fire('Error', 'เกิดข้อผิดพลาดในการค้นหา: ' + err.message, 'error');
+            }
+        }
+
+        function renderCheckoutResult(data) {
+            Swal.close(); 
+            const resDiv = getEl('checkoutResult');
+            if(!resDiv) return;
+            resDiv.classList.remove('hidden');
+            
+            let statusColor = data.status === 'Approved' ? 'bg-green-50 text-green-700 border-green-300' : 
+                              (data.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-300' : 'bg-yellow-50 text-yellow-700 border-yellow-300');
+            
+            let statusText = data.status === 'Approved' ? '<i class="fa-solid fa-check-circle"></i> ประทับตราแล้ว' : 
+                             (data.status === 'Rejected' ? '<i class="fa-solid fa-times-circle"></i> ปฏิเสธการเข้าพบ' : '<i class="fa-solid fa-clock"></i> รอดำเนินการ');
+
+            resDiv.className = `mt-6 p-5 rounded-xl border-2 shadow-sm transition-all duration-300 ${statusColor}`;
+            resDiv.innerHTML = `
+                <div class="flex justify-between items-start mb-3 border-b border-gray-200/50 pb-2">
+                    <h3 class="font-bold text-lg">รหัส: ${data.id}</h3>
+                    <span class="px-2 py-1 bg-white/80 rounded-md text-xs font-bold shadow-sm">${statusText}</span>
+                </div>
+                <div class="space-y-1 mb-4">
+                    <p class="text-sm"><strong>ติดต่อ:</strong> ${data.target}</p>
+                    <p class="text-sm"><strong>เวลาเข้า:</strong> ${data.time}</p>
+                    <p class="text-sm"><strong>วัตถุประสงค์:</strong> ${data.purpose}</p>
+                    ${data.vehicleType ? `<p class="text-sm"><strong>รถ:</strong> ${data.vehicleType} (${data.licensePlate})</p>` : ''}
+                </div>
+                
+                <button onclick="confirmCheckout('${data.id}')" class="w-full bg-gray-800 hover:bg-black text-white py-3 rounded-xl shadow-md font-bold transition-transform hover:-translate-y-0.5">
+                    <i class="fa-solid fa-sign-out-alt mr-2"></i> บันทึกรถออก (Check-out)
+                </button>
+            `;
+        }
+
+        function confirmCheckout(id) {
+            Swal.fire({
+                title: 'ยืนยันนำรถออก?',
+                text: "บันทึกเวลาออกให้รหัส " + id,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#34d399',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'ยืนยัน',
+                cancelButtonText: 'ยกเลิก',
+                shape: 'rounded-xl'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                    
+                    try {
+                        if (typeof google !== 'undefined' && google.script && google.script.run) {
+                            google.script.run
+                                .withSuccessHandler(() => {
+                                    Swal.fire('สำเร็จ', 'บันทึกรถออกเรียบร้อย', 'success');
+                                    getEl('checkoutResult').classList.add('hidden');
+                                    getEl('checkoutSearch').value = '';
+                                })
+                                .withFailureHandler(err => Swal.fire('Error', err.message || 'บันทึกไม่สำเร็จ', 'error'))
+                                .setCheckoutTime(id);
+                        } else {
+                            window.mockDB[id].status = 'Checked-Out';
+                            Swal.fire('สำเร็จ', 'บันทึกรถออกเรียบร้อย (Mock)', 'success');
+                            getEl('checkoutResult').classList.add('hidden');
+                            getEl('checkoutSearch').value = '';
+                        }
+                    } catch (err) {
+                        Swal.fire('Error', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                    }
+                }
+            })
+        }
+
+        // ==========================================
+        // 5. ระบบตรวจสอบเส้นทาง (Router) เมื่อโหลดหน้าเว็บ
+        // ==========================================
+        window.addEventListener('load', () => {
+            initClock(); // เริ่มนับเวลาเมื่อโหลดหน้าเว็บเสร็จ
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const view = urlParams.get('view');
+                const id = urlParams.get('id');
+                const regRoom = urlParams.get('reg_room'); 
+
+                const tabCheckin = getEl('tab-checkin');
+                const viewCheckin = getEl('view-checkin');
+
+                if (view === 'resident' || regRoom) {
+                    if (tabCheckin && tabCheckin.parentElement) tabCheckin.parentElement.classList.add('hidden');
+                    if (viewCheckin) viewCheckin.classList.add('hidden');
+                }
+
+                if (view === 'resident' && id) {
+                    const viewRes = getEl('view-resident');
+                    if (viewRes) viewRes.classList.remove('hidden');
+                    if (getEl('res-id')) getEl('res-id').innerText = id;
+                    if (getEl('res-time')) getEl('res-time').innerText = "กำลังดึงข้อมูล..."; 
+                    if (getEl('res-purpose')) getEl('res-purpose').innerText = "กำลังดึงข้อมูล...";
+                } 
+                else if (regRoom) {
+                    const viewReg = getEl('view-register');
+                    if (viewReg) viewReg.classList.remove('hidden');
+                    if (getEl('reg-room-text')) getEl('reg-room-text').innerText = "กำลังผูก LINE กับบ้านเลขที่: " + regRoom;
+                    initLIFFForRegistration(regRoom);
+                }
+
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    google.script.run
+                        .withSuccessHandler(populateRoomList)
+                        .withFailureHandler(err => console.warn('ไม่สามารถโหลดรายชื่อห้องได้', err))
+                        .getRoomList();
+                } else {
+                    populateRoomList(["101", "102", "123/45"]);
+                }
+            } catch (err) {
+                console.error("Window Load Error:", err);
+            }
+        });
+
+        function populateRoomList(rooms) {
+            const dataList = getEl('roomList');
+            if(!dataList) return;
+            dataList.innerHTML = ''; 
+            if(rooms && rooms.length > 0) {
+                rooms.forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room;
+                    dataList.appendChild(option);
+                });
+            }
+        }
+
+        function residentAction(action) {
+            const idEl = getEl('res-id');
+            const id = idEl ? idEl.innerText : '--';
+            Swal.fire({
+                title: 'ยืนยัน?',
+                text: "คุณต้องการ " + (action==='Approved' ? 'ประทับตราอนุมัติ' : 'ปฏิเสธ') + " ใช่หรือไม่",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: action==='Approved' ? '#34d399' : '#ef4444',
+                confirmButtonText: 'ยืนยัน',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('สำเร็จ!', 'บันทึกข้อมูลแล้ว', 'success');
+                }
+            });
+        }
+
+        // ==========================================
+        // 6. ระบบสร้าง QR และลงทะเบียนผ่าน LIFF
+        // ==========================================
+        function generateResidentQR() {
+            try {
+                const roomInput = getEl('adminRoomInput');
+                if(!roomInput) return;
+                const room = roomInput.value.trim();
+                
+                if(!room) {
+                    Swal.fire('แจ้งเตือน', 'กรุณาระบุเลขห้อง/บ้านเลขที่ ก่อน', 'warning');
+                    return;
+                }
+                if(!MY_LIFF_ID || MY_LIFF_ID === "2009358681-P2mTrvGB") {
+                    Swal.fire('ยังไม่ได้ตั้งค่า', 'ผู้ดูแลระบบต้องใส่ค่า LIFF ID ในโค้ด HTML ก่อนจึงจะใช้งานได้', 'error');
+                    return;
+                }
+
+                const liffUrl = "https://liff.line.me/" + MY_LIFF_ID + "?reg_room=" + encodeURIComponent(room);
+                
+                if(getEl('qrRoomLabel')) getEl('qrRoomLabel').innerText = "บ้านเลขที่: " + room;
+                const qrContainer = getEl('residentQrcode');
+                if(qrContainer) {
+                    qrContainer.innerHTML = "";
+                    new QRCode(qrContainer, {
+                        text: liffUrl,
+                        width: 200,
+                        height: 200,
+                        colorDark : "#059669",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                }
+                if(getEl('adminQrResult')) getEl('adminQrResult').classList.remove('hidden');
+            } catch (err) {
+                console.error("Generate QR Error:", err);
+            }
+        }
+
+        async function initLIFFForRegistration(room) {
+            try {
+                if (typeof liff === 'undefined') {
+                    throw new Error("ระบบโหลดส่วนเสริม LINE (LIFF SDK) ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต");
+                }
+
+                await liff.init({ liffId: MY_LIFF_ID });
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+
+                const profile = await liff.getProfile();
+                const userId = profile.userId;
+
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    google.script.run
+                        .withSuccessHandler(function(response) {
+                            if(getEl('reg-loading')) getEl('reg-loading').classList.add('hidden');
+                            if(response && response.success) {
+                                if(getEl('reg-result')) getEl('reg-result').classList.remove('hidden');
+                                if(getEl('res-success-room')) getEl('res-success-room').innerText = room;
+                            } else {
+                                Swal.fire('เกิดข้อผิดพลาด', (response && response.message) ? response.message : 'ไม่สามารถบันทึกได้', 'error').then(() => liff.closeWindow());
+                            }
+                        })
+                        .withFailureHandler(err => {
+                            Swal.fire('Error', 'การเชื่อมต่อขัดข้อง: ' + err.message, 'error');
+                        })
+                        .registerResidentLine(room, userId);
+                } else {
+                    setTimeout(() => {
+                        if(getEl('reg-loading')) getEl('reg-loading').classList.add('hidden');
+                        if(getEl('reg-result')) getEl('reg-result').classList.remove('hidden');
+                        if(getEl('res-success-room')) getEl('res-success-room').innerText = room + " (Mock: " + userId + ")";
+                    }, 1500);
+                }
+            } catch (err) {
+                console.error("LIFF Init Error:", err);
+                Swal.fire('Error', err.message || 'ไม่สามารถเชื่อมต่อ LINE ได้ กรุณาสแกน QR Code นี้ผ่านแอปพลิเคชัน LINE เท่านั้น', 'error');
+            }
+        }
+    </script>
 </body>
 </html>
